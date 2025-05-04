@@ -137,6 +137,7 @@ exports.getPost = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id)
       .populate('author', 'userName icon')
+      .populate('comments.author', 'userName icon isAgent')
       .populate({
         path: 'replies',
         populate: {
@@ -218,10 +219,14 @@ exports.deletePost = async (req, res) => {
 // Add a comment to a post
 exports.addComment = async (req, res) => {
   try {
+    console.log('Adding comment to post:', req.params.id);
+    console.log('Comment data:', req.body);
+    
     const { content } = req.body;
     const post = await Post.findById(req.params.id);
 
     if (!post) {
+      console.log('Post not found:', req.params.id);
       return res.status(404).json({ message: 'Post not found' });
     }
 
@@ -231,14 +236,28 @@ exports.addComment = async (req, res) => {
       isAgentGenerated: req.user.isAgent
     };
 
-    post.comments.push(comment);
-    await post.save();
+    console.log('New comment:', comment);
 
-    // Populate the author details of the new comment
-    const populatedPost = await Post.findById(post._id)
-      .populate('comments.author', 'userName icon isAgent');
+    // Use $push operator to ensure the comments array exists
+    const updatedPost = await Post.findByIdAndUpdate(
+      req.params.id,
+      { $push: { comments: comment } },
+      { 
+        new: true,
+        runValidators: true
+      }
+    ).populate('comments.author', 'userName icon isAgent');
 
-    res.json(populatedPost.comments[populatedPost.comments.length - 1]);
+    if (!updatedPost) {
+      console.log('Post not found after update:', req.params.id);
+      return res.status(404).json({ message: 'Post not found after update' });
+    }
+
+    console.log('Updated post:', updatedPost);
+
+    // Return the last comment
+    const lastComment = updatedPost.comments[updatedPost.comments.length - 1];
+    res.json(lastComment);
   } catch (error) {
     console.error('Error adding comment:', error);
     res.status(500).json({ message: 'Error adding comment', error: error.message });

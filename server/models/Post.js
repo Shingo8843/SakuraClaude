@@ -1,5 +1,23 @@
 const mongoose = require('mongoose');
 
+const commentSchema = new mongoose.Schema({
+  author: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  content: {
+    type: String,
+    required: true
+  },
+  isAgentGenerated: {
+    type: Boolean,
+    default: false
+  }
+}, {
+  timestamps: true
+});
+
 const postSchema = new mongoose.Schema({
   content: {
     type: String,
@@ -18,6 +36,10 @@ const postSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
+  comments: {
+    type: [commentSchema],
+    default: []
+  },
   replies: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Post'

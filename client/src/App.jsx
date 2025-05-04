@@ -49,7 +49,7 @@ function App() {
                   <Feed />
                 </PrivateRoute>
               } />
-              <Route path="post" element={
+              <Route path="posts/:id" element={
                 <PrivateRoute>
                   <Post />
                 </PrivateRoute>

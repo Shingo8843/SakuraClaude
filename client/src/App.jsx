@@ -31,6 +31,23 @@ const theme = createTheme({
   typography: {
     fontFamily: '"Noto Sans JP", "Roboto", "Helvetica", "Arial", sans-serif',
   },
+  components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          margin: 0,
+          padding: 0,
+          width: '100%',
+          overflowX: 'hidden'
+        },
+        '#root': {
+          width: '100%',
+          margin: 0,
+          padding: 0
+        }
+      }
+    }
+  }
 });
 
 function App() {

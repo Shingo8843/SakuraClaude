@@ -90,6 +90,16 @@ const Post = () => {
     }
   };
 
+  const handleUnlike = async () => {
+    try {
+      const response = await api.post(`/posts/${id}/unlike`);
+      setPost(response.data);
+    } catch (err) {
+      console.error('Error unliking post:', err);
+      setError('Failed to unlike post');
+    }
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
@@ -109,7 +119,18 @@ const Post = () => {
   }
 
   return (
-    <Container maxWidth="md">
+    <Container 
+      maxWidth="md" 
+      sx={{ 
+        minHeight: '100vh',
+        py: 4,
+        display: 'flex',
+        flexDirection: 'column',
+        px: { xs: 2, sm: 3, md: 4 },
+        maxWidth: '100% !important',
+        width: '100%'
+      }}
+    >
       <Box sx={{ mb: 4 }}>
         <Button
           startIcon={<ArrowBackIcon />}
@@ -118,61 +139,71 @@ const Post = () => {
         >
           Back to Feed
         </Button>
-
-        <Card>
-          <CardContent>
-            <Box display="flex" alignItems="center" mb={2}>
-              <Avatar sx={{ mr: 2 }}>
-                {post.author?.userName?.[0]?.toUpperCase() || '?'}
-              </Avatar>
-              <Box>
-                <Typography variant="subtitle1">
-                  {post.author?.userName || 'Unknown User'}
+        {post ? (
+          <Card>
+            <CardContent>
+              <Box display="flex" alignItems="center" mb={2}>
+                <Avatar sx={{ mr: 2 }}>
+                  {post.author?.userName?.[0]?.toUpperCase() || '?'}
+                </Avatar>
+                <Box>
+                  <Typography variant="subtitle1">
+                    {post.author?.userName || 'Unknown User'}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {new Date(post.createdAt).toLocaleString()}
+                  </Typography>
+                </Box>
+              </Box>
+              <Typography variant="body1" sx={{ mb: 2 }}>
+                {post.content}
+              </Typography>
+              <Box display="flex" alignItems="center" gap={1}>
+                <Typography variant="caption" color="text.secondary">
+                  {post.metrics?.views || 0} views
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  {new Date(post.createdAt).toLocaleString()}
+                  • {post.metrics?.shares || 0} shares
                 </Typography>
               </Box>
-            </Box>
-            <Typography variant="body1" sx={{ mb: 2 }}>
-              {post.content}
-            </Typography>
-            <Box display="flex" alignItems="center" gap={1}>
-              <Typography variant="caption" color="text.secondary">
-                {post.metrics?.views || 0} views
+            </CardContent>
+            <Divider />
+            <CardActions sx={{ px: 2 }}>
+              <IconButton
+                onClick={() => (post.likes || []).includes(user._id) 
+                  ? handleUnlike()
+                  : handleLike()
+                }
+              >
+                {(post.likes || []).includes(user._id) ? (
+                  <FavoriteIcon color="error" />
+                ) : (
+                  <FavoriteBorderIcon />
+                )}
+              </IconButton>
+              <Typography variant="caption">
+                {(post.likes || []).length}
               </Typography>
-              <Typography variant="caption" color="text.secondary">
-                • {post.metrics?.shares || 0} shares
+              <IconButton>
+                <CommentIcon />
+              </IconButton>
+              <Typography variant="caption">
+                {(post.comments || []).length}
               </Typography>
-            </Box>
-          </CardContent>
-          <Divider />
-          <CardActions>
-            <IconButton onClick={handleLike}>
-              {post.likes?.includes(user._id) ? (
-                <FavoriteIcon color="error" />
-              ) : (
-                <FavoriteBorderIcon />
-              )}
-            </IconButton>
-            <Typography variant="caption">
-              {post.likes?.length || 0}
-            </Typography>
-            <IconButton>
-              <CommentIcon />
-            </IconButton>
-            <Typography variant="caption">
-              {comments.length}
-            </Typography>
-            <IconButton>
-              <ShareIcon />
-            </IconButton>
-          </CardActions>
-        </Card>
+              <IconButton>
+                <ShareIcon />
+              </IconButton>
+            </CardActions>
+          </Card>
+        ) : (
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+            <CircularProgress />
+          </Box>
+        )}
       </Box>
 
-      <Box sx={{ mb: 4 }}>
-        <Paper sx={{ p: 2 }}>
+      <Box sx={{ flex: 1 }}>
+        <Paper sx={{ p: 2, mb: 2 }}>
           <form onSubmit={handleCommentSubmit}>
             <TextField
               fullWidth
@@ -193,52 +224,41 @@ const Post = () => {
             </Button>
           </form>
         </Paper>
+
+        <Box sx={{ mt: 4 }}>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Comments
+          </Typography>
+          {comments.length > 0 ? (
+            comments.map((comment) => (
+              <Card key={comment._id} sx={{ mb: 2 }}>
+                <CardContent>
+                  <Box display="flex" alignItems="center" mb={1}>
+                    <Avatar sx={{ mr: 2, width: 32, height: 32 }}>
+                      {comment.author?.userName?.[0]?.toUpperCase() || '?'}
+                    </Avatar>
+                    <Box>
+                      <Typography variant="subtitle2">
+                        {comment.author?.userName || 'Unknown User'}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {new Date(comment.createdAt).toLocaleString()}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Typography variant="body2">
+                    {comment.content}
+                  </Typography>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <Typography variant="body1" align="center" sx={{ mt: 4 }}>
+              No comments yet. Be the first to comment!
+            </Typography>
+          )}
+        </Box>
       </Box>
-
-      {error && (
-        <Typography color="error" sx={{ mb: 2 }}>
-          {error}
-        </Typography>
-      )}
-
-      <Typography variant="h6" sx={{ mb: 2 }}>
-        Comments ({comments.length})
-      </Typography>
-
-      <List>
-        {comments.map((comment) => (
-          <ListItem
-            key={comment._id}
-            alignItems="flex-start"
-            sx={{ mb: 2 }}
-          >
-            <ListItemAvatar>
-              <Avatar>
-                {comment.author?.userName?.[0]?.toUpperCase() || '?'}
-              </Avatar>
-            </ListItemAvatar>
-            <ListItemText
-              primary={
-                <Box display="flex" alignItems="center" gap={1}>
-                  <Typography variant="subtitle2">
-                    {comment.author?.userName || 'Unknown User'}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {new Date(comment.createdAt).toLocaleString()}
-                  </Typography>
-                </Box>
-              }
-              secondary={comment.content}
-            />
-          </ListItem>
-        ))}
-      </List>
-
-      {comments.length === 0 && (
-        <Typography variant="body1" align="center" sx={{ mt: 4 }}>
-          No comments yet. Be the first to comment!
-        </Typography>
-      )}
     </Container>
   );
 };

@@ -1,5 +1,5 @@
 import { Outlet, useNavigate } from 'react-router-dom';
-import { AppBar, Toolbar, Typography, Button, Container } from '@mui/material';
+import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 
 const Layout = () => {
@@ -12,7 +12,7 @@ const Layout = () => {
   };
 
   return (
-    <>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <AppBar position="static">
         <Toolbar>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
@@ -21,7 +21,7 @@ const Layout = () => {
           {user && (
             <>
               <Typography variant="body1" sx={{ mr: 2 }}>
-                Welcome, {user.username}
+                Welcome, {user.userName}
               </Typography>
               <Button color="inherit" onClick={handleLogout}>
                 Logout
@@ -30,10 +30,10 @@ const Layout = () => {
           )}
         </Toolbar>
       </AppBar>
-      <Container sx={{ mt: 4 }}>
+      <Box sx={{ flex: 1, width: '100%' }}>
         <Outlet />
-      </Container>
-    </>
+      </Box>
+    </Box>
   );
 };
 

@@ -1,48 +1,57 @@
 const User = require('../models/User');
+const Post = require('../models/Post');
 
-// Update user profile
-exports.updateProfile = async (req, res) => {
+// Get user profile by ID
+exports.getUserProfile = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const updates = req.body;
-
-    // Remove fields that shouldn't be updated
-    const allowedUpdates = [
-      'icon',
-      'profileMessage',
-      'postFrequency',
-      'replyRate',
-      'replySpeed',
-      'interest',
-      'tone',
-      'timeZone'
-    ];
-
-    const updateFields = {};
-    for (const field of allowedUpdates) {
-      if (updates[field] !== undefined) {
-        updateFields[field] = updates[field];
-      }
-    }
-
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { $set: updateFields },
-      { new: true, runValidators: true }
-    ).select('-password');
+    const user = await User.findById(req.params.id)
+      .select('-password') // Exclude password from response
+      .lean();
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // Get user's posts
+    const posts = await Post.find({ author: req.params.id })
+      .populate('author', 'userName')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Add posts to user object
+    user.posts = posts;
+
     res.json(user);
-  } catch (error) {
-    console.error('Error updating profile:', error);
-    res.status(500).json({ message: 'Error updating profile', error: error.message });
+  } catch (err) {
+    console.error('Error fetching user profile:', err);
+    res.status(500).json({ message: 'Error fetching user profile' });
   }
 };
 
-// Get user profile
+// Update user profile
+exports.updateUserProfile = async (req, res) => {
+  try {
+    const { bio } = req.body;
+    const userId = req.params.id;
+
+    // Check if user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update user profile
+    user.bio = bio;
+    await user.save();
+
+    res.json(user);
+  } catch (err) {
+    console.error('Error updating user profile:', err);
+    res.status(500).json({ message: 'Error updating user profile' });
+  }
+};
+
+// Get current user's profile
 exports.getProfile = async (req, res) => {
   try {
     const userId = req.user.id;
